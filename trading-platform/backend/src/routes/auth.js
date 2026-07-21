@@ -8,6 +8,10 @@ import { validatePassword, validateEmail, passwordStrength } from '../middleware
 
 const router = express.Router();
 
+router.get('/me', authenticate, (req, res) => {
+  res.json({ user: req.user });
+});
+
 // Register with password strength + email verification
 router.post('/register', validateEmail, validatePassword, async (req, res) => {
   try {
@@ -50,7 +54,7 @@ router.post('/register', validateEmail, validatePassword, async (req, res) => {
     res.status(201).json({
       user,
       token,
-      verificationToken: verifyToken,
+      ...(process.env.NODE_ENV === 'production' ? {} : { verificationToken: verifyToken }),
       message: 'Registration successful. Please verify your email.'
     });
   } catch (error) {
@@ -193,7 +197,7 @@ router.post('/password-reset/request', validateEmail, async (req, res) => {
     // In production, send email here
     res.json({
       message: 'If the email exists, a reset link has been sent.',
-      resetToken // Only in dev - remove in production
+      ...(process.env.NODE_ENV === 'production' ? {} : { resetToken })
     });
   } catch (error) {
     console.error('Password reset request error:', error);
@@ -321,7 +325,7 @@ router.post('/resend-verification', authenticate, async (req, res) => {
 
     res.json({
       message: 'Verification email sent',
-      verificationToken: verifyToken // Only in dev
+      ...(process.env.NODE_ENV === 'production' ? {} : { verificationToken: verifyToken })
     });
   } catch (error) {
     console.error('Resend verification error:', error);

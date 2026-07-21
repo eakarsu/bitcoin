@@ -1,7 +1,6 @@
 import axios from 'axios';
 import pool from '../config/database.js';
 import * as aiService from './aiService.js';
-import snoowrap from 'snoowrap';
 
 /**
  * Fetch Reddit sentiment for a cryptocurrency
@@ -13,27 +12,37 @@ export async function fetchRedditSentiment(symbol) {
   }
 
   try {
-    const reddit = new snoowrap({
-      userAgent: process.env.REDDIT_USER_AGENT || 'TradingPlatform/1.0',
-      clientId: process.env.REDDIT_CLIENT_ID,
-      clientSecret: process.env.REDDIT_CLIENT_SECRET,
-      refreshToken: process.env.REDDIT_REFRESH_TOKEN,
-    });
+    const tokenResponse = await axios.post(
+      'https://www.reddit.com/api/v1/access_token',
+      new URLSearchParams({ grant_type: 'client_credentials' }),
+      {
+        auth: { username: process.env.REDDIT_CLIENT_ID, password: process.env.REDDIT_CLIENT_SECRET },
+        headers: { 'User-Agent': process.env.REDDIT_USER_AGENT || 'TradingPlatform/1.0' },
+        timeout: 5000,
+        maxRedirects: 0,
+      }
+    );
+    const redditHeaders = {
+      Authorization: `Bearer ${tokenResponse.data.access_token}`,
+      'User-Agent': process.env.REDDIT_USER_AGENT || 'TradingPlatform/1.0',
+    };
 
-    // Search relevant subreddits
+    // Search a fixed allowlist. This legacy development-only integration has
+    // bounded timeouts and never accepts caller-controlled URLs.
     const subreddits = ['cryptocurrency', 'CryptoMarkets', 'Bitcoin', 'ethereum', 'CryptoCurrency'];
     const searchTerm = getSearchTerm(symbol);
-
     const posts = [];
     for (const subreddit of subreddits) {
       try {
-        const results = await reddit
-          .getSubreddit(subreddit)
-          .search({ query: searchTerm, time: 'day', limit: 10 });
-
-        posts.push(...results);
-      } catch (err) {
-        console.error(`Error fetching from r/${subreddit}:`, err.message);
+        const response = await axios.get(`https://oauth.reddit.com/r/${subreddit}/search`, {
+          headers: redditHeaders,
+          params: { q: searchTerm, t: 'day', limit: 10, restrict_sr: true },
+          timeout: 5000,
+          maxRedirects: 0,
+        });
+        posts.push(...(response.data?.data?.children || []).map((child) => child.data));
+      } catch (error) {
+        console.error(`Error fetching from r/${subreddit}:`, error.message);
       }
     }
 

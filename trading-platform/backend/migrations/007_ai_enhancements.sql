@@ -33,10 +33,10 @@ CREATE TABLE IF NOT EXISTS ai_predictions (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_ai_predictions_symbol ON ai_predictions(symbol);
-CREATE INDEX idx_ai_predictions_type ON ai_predictions(prediction_type);
-CREATE INDEX idx_ai_predictions_expires_at ON ai_predictions(expires_at);
-CREATE INDEX idx_ai_predictions_verified ON ai_predictions(verified_at);
+CREATE INDEX IF NOT EXISTS idx_ai_predictions_symbol ON ai_predictions(symbol);
+CREATE INDEX IF NOT EXISTS idx_ai_predictions_type ON ai_predictions(prediction_type);
+CREATE INDEX IF NOT EXISTS idx_ai_predictions_expires_at ON ai_predictions(expires_at);
+CREATE INDEX IF NOT EXISTS idx_ai_predictions_verified ON ai_predictions(verified_at);
 
 -- ============================================================================
 -- AI Recommendation History
@@ -70,10 +70,10 @@ CREATE TABLE IF NOT EXISTS ai_recommendations (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_ai_recommendations_user ON ai_recommendations(user_id);
-CREATE INDEX idx_ai_recommendations_type ON ai_recommendations(recommendation_type);
-CREATE INDEX idx_ai_recommendations_created ON ai_recommendations(created_at DESC);
-CREATE INDEX idx_ai_recommendations_priority ON ai_recommendations(priority DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_recommendations_user ON ai_recommendations(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_recommendations_type ON ai_recommendations(recommendation_type);
+CREATE INDEX IF NOT EXISTS idx_ai_recommendations_created ON ai_recommendations(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_recommendations_priority ON ai_recommendations(priority DESC);
 
 -- ============================================================================
 -- AI Feedback System
@@ -99,10 +99,10 @@ CREATE TABLE IF NOT EXISTS ai_feedback (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_ai_feedback_user ON ai_feedback(user_id);
-CREATE INDEX idx_ai_feedback_type ON ai_feedback(feedback_type);
-CREATE INDEX idx_ai_feedback_reference ON ai_feedback(reference_type, reference_id);
-CREATE INDEX idx_ai_feedback_rating ON ai_feedback(rating);
+CREATE INDEX IF NOT EXISTS idx_ai_feedback_user ON ai_feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_feedback_type ON ai_feedback(feedback_type);
+CREATE INDEX IF NOT EXISTS idx_ai_feedback_reference ON ai_feedback(reference_type, reference_id);
+CREATE INDEX IF NOT EXISTS idx_ai_feedback_rating ON ai_feedback(rating);
 
 -- ============================================================================
 -- AI-Powered Alerts
@@ -136,11 +136,11 @@ CREATE TABLE IF NOT EXISTS ai_alerts (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_ai_alerts_user ON ai_alerts(user_id);
-CREATE INDEX idx_ai_alerts_type ON ai_alerts(alert_type);
-CREATE INDEX idx_ai_alerts_severity ON ai_alerts(severity);
-CREATE INDEX idx_ai_alerts_read ON ai_alerts(is_read);
-CREATE INDEX idx_ai_alerts_triggered ON ai_alerts(triggered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_alerts_user ON ai_alerts(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_alerts_type ON ai_alerts(alert_type);
+CREATE INDEX IF NOT EXISTS idx_ai_alerts_severity ON ai_alerts(severity);
+CREATE INDEX IF NOT EXISTS idx_ai_alerts_read ON ai_alerts(is_read);
+CREATE INDEX IF NOT EXISTS idx_ai_alerts_triggered ON ai_alerts(triggered_at DESC);
 
 -- ============================================================================
 -- Backtesting Results
@@ -186,9 +186,9 @@ CREATE TABLE IF NOT EXISTS backtest_results (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_backtest_user ON backtest_results(user_id);
-CREATE INDEX idx_backtest_symbol ON backtest_results(symbol);
-CREATE INDEX idx_backtest_created ON backtest_results(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backtest_user ON backtest_results(user_id);
+CREATE INDEX IF NOT EXISTS idx_backtest_symbol ON backtest_results(symbol);
+CREATE INDEX IF NOT EXISTS idx_backtest_created ON backtest_results(created_at DESC);
 
 -- ============================================================================
 -- Automated Trading Bots
@@ -234,9 +234,9 @@ CREATE TABLE IF NOT EXISTS trading_bots (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_trading_bots_user ON trading_bots(user_id);
-CREATE INDEX idx_trading_bots_status ON trading_bots(status);
-CREATE INDEX idx_trading_bots_enabled ON trading_bots(is_enabled);
+CREATE INDEX IF NOT EXISTS idx_trading_bots_user ON trading_bots(user_id);
+CREATE INDEX IF NOT EXISTS idx_trading_bots_status ON trading_bots(status);
+CREATE INDEX IF NOT EXISTS idx_trading_bots_enabled ON trading_bots(is_enabled);
 
 -- ============================================================================
 -- Bot Trade History
@@ -277,10 +277,10 @@ CREATE TABLE IF NOT EXISTS bot_trades (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_bot_trades_bot ON bot_trades(bot_id);
-CREATE INDEX idx_bot_trades_user ON bot_trades(user_id);
-CREATE INDEX idx_bot_trades_symbol ON bot_trades(symbol);
-CREATE INDEX idx_bot_trades_created ON bot_trades(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bot_trades_bot ON bot_trades(bot_id);
+CREATE INDEX IF NOT EXISTS idx_bot_trades_user ON bot_trades(user_id);
+CREATE INDEX IF NOT EXISTS idx_bot_trades_symbol ON bot_trades(symbol);
+CREATE INDEX IF NOT EXISTS idx_bot_trades_created ON bot_trades(created_at DESC);
 
 -- ============================================================================
 -- Social Sentiment Data
@@ -318,9 +318,9 @@ CREATE TABLE IF NOT EXISTS social_sentiment (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_social_sentiment_symbol ON social_sentiment(symbol);
-CREATE INDEX idx_social_sentiment_source ON social_sentiment(source);
-CREATE INDEX idx_social_sentiment_collected ON social_sentiment(collected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_social_sentiment_symbol ON social_sentiment(symbol);
+CREATE INDEX IF NOT EXISTS idx_social_sentiment_source ON social_sentiment(source);
+CREATE INDEX IF NOT EXISTS idx_social_sentiment_collected ON social_sentiment(collected_at DESC);
 
 -- ============================================================================
 -- Whale Activity Tracking
@@ -361,10 +361,10 @@ CREATE TABLE IF NOT EXISTS whale_activity (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_whale_activity_symbol ON whale_activity(symbol);
-CREATE INDEX idx_whale_activity_type ON whale_activity(activity_type);
-CREATE INDEX idx_whale_activity_detected ON whale_activity(detected_at DESC);
-CREATE INDEX idx_whale_activity_amount ON whale_activity(amount_usd DESC);
+CREATE INDEX IF NOT EXISTS idx_whale_activity_symbol ON whale_activity(symbol);
+CREATE INDEX IF NOT EXISTS idx_whale_activity_type ON whale_activity(activity_type);
+CREATE INDEX IF NOT EXISTS idx_whale_activity_detected ON whale_activity(detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_whale_activity_amount ON whale_activity(amount_usd DESC);
 
 -- ============================================================================
 -- Asset Correlation Data
@@ -398,9 +398,9 @@ CREATE TABLE IF NOT EXISTS asset_correlations (
   UNIQUE(symbol_a, symbol_b, time_period, calculated_at)
 );
 
-CREATE INDEX idx_asset_correlations_symbols ON asset_correlations(symbol_a, symbol_b);
-CREATE INDEX idx_asset_correlations_period ON asset_correlations(time_period);
-CREATE INDEX idx_asset_correlations_calculated ON asset_correlations(calculated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_asset_correlations_symbols ON asset_correlations(symbol_a, symbol_b);
+CREATE INDEX IF NOT EXISTS idx_asset_correlations_period ON asset_correlations(time_period);
+CREATE INDEX IF NOT EXISTS idx_asset_correlations_calculated ON asset_correlations(calculated_at DESC);
 
 -- ============================================================================
 -- Anomaly Detection
@@ -443,11 +443,11 @@ CREATE TABLE IF NOT EXISTS price_anomalies (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_price_anomalies_symbol ON price_anomalies(symbol);
-CREATE INDEX idx_price_anomalies_type ON price_anomalies(anomaly_type);
-CREATE INDEX idx_price_anomalies_severity ON price_anomalies(severity);
-CREATE INDEX idx_price_anomalies_detected ON price_anomalies(detected_at DESC);
-CREATE INDEX idx_price_anomalies_resolved ON price_anomalies(is_resolved);
+CREATE INDEX IF NOT EXISTS idx_price_anomalies_symbol ON price_anomalies(symbol);
+CREATE INDEX IF NOT EXISTS idx_price_anomalies_type ON price_anomalies(anomaly_type);
+CREATE INDEX IF NOT EXISTS idx_price_anomalies_severity ON price_anomalies(severity);
+CREATE INDEX IF NOT EXISTS idx_price_anomalies_detected ON price_anomalies(detected_at DESC);
+CREATE INDEX IF NOT EXISTS idx_price_anomalies_resolved ON price_anomalies(is_resolved);
 
 -- ============================================================================
 -- AI Performance Metrics (Aggregated)
@@ -478,8 +478,8 @@ CREATE TABLE IF NOT EXISTS ai_performance_metrics (
   UNIQUE(metric_type, time_period, period_start)
 );
 
-CREATE INDEX idx_ai_performance_type ON ai_performance_metrics(metric_type);
-CREATE INDEX idx_ai_performance_period ON ai_performance_metrics(period_start DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_performance_type ON ai_performance_metrics(metric_type);
+CREATE INDEX IF NOT EXISTS idx_ai_performance_period ON ai_performance_metrics(period_start DESC);
 
 -- ============================================================================
 -- Views for Easy Querying

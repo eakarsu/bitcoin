@@ -21,19 +21,23 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const toast = useToast();
 
+  const demoEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_LEGACY_DEMO_SURFACES === 'true';
   const pages = [
+    { name: 'Paper Trading', path: '/paper-trading', icon: <ShowChart /> },
+    ...(demoEnabled ? [
     { name: 'AlgoTrader Pro', path: '/algotrader', icon: <Dashboard /> },
     { name: 'SignalStream', path: '/signalstream', icon: <TrendingUp /> },
     { name: 'AI Analytics', path: '/ai-analytics', icon: <SmartToy /> },
     { name: 'Pricing', path: '/pricing', icon: <ShowChart /> }
+    ] : [])
   ];
 
-  const managePages = [
+  const managePages = demoEnabled ? [
     { name: 'Signals', path: '/manage/signals', icon: <SignalCellularAlt /> },
     { name: 'Strategies', path: '/manage/strategies', icon: <AccountTree /> },
     { name: 'Trades', path: '/manage/trades', icon: <SwapHoriz /> },
     { name: 'Users', path: '/manage/users', icon: <People /> },
-  ];
+  ] : [];
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -139,7 +143,7 @@ const Navbar = () => {
               </Button>
             ))}
             {/* Manage Dropdown */}
-            <Button
+            {demoEnabled && <Button
               startIcon={<ManageAccounts />}
               onClick={(e) => setAnchorElManage(e.currentTarget)}
               sx={{
@@ -150,8 +154,8 @@ const Navbar = () => {
               }}
             >
               Manage
-            </Button>
-            <Menu
+            </Button>}
+            {demoEnabled && <Menu
               anchorEl={anchorElManage}
               open={Boolean(anchorElManage)}
               onClose={() => setAnchorElManage(null)}
@@ -163,7 +167,7 @@ const Navbar = () => {
                   <ListItemText>{page.name}</ListItemText>
                 </MenuItem>
               ))}
-            </Menu>
+            </Menu>}
           </Box>
 
           {/* User Menu */}

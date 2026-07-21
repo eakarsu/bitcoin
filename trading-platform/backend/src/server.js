@@ -1,25 +1,15 @@
 import express from 'express';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import pool from './config/database.js';
-import signalRoutes from './routes/signals.js';
-import portfolioRoutes from './routes/portfolios.js';
-import strategyRoutes from './routes/strategies.js';
-import priceRoutes from './routes/prices.js';
 import authRoutes from './routes/auth.js';
-import aiRoutes from './routes/ai.js';
-import enhancementsRoutes from './routes/enhancements.js';
-import tradeRoutes from './routes/trades.js';
 import userRoutes from './routes/users.js';
+import governedTradingRoutes from './routes/governedTrading.js';
 import { sanitizeInput } from './middleware/sanitize.js';
-import { startPriceUpdates } from './services/priceService.js';
-import { startSignalGeneration } from './services/signalService.js';
-import { startScheduledTasks } from './services/schedulerService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +19,8 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express();
 const httpServer = createServer(app);
+const production = process.env.NODE_ENV === 'production';
+const legacyDemoEnabled = !production && process.env.ENABLE_LEGACY_DEMO_SURFACES === 'true';
 
 // Security headers
 app.use(helmet({
@@ -37,6 +29,7 @@ app.use(helmet({
 }));
 
 // CORS configuration
+if (production && !process.env.CORS_ORIGIN) throw new Error('CORS_ORIGIN is required in production');
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
   credentials: true
@@ -48,55 +41,72 @@ app.use(express.urlencoded({ extended: true }));
 // Input sanitization
 app.use(sanitizeInput);
 
-// Setup Socket.IO for real-time updates
-const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    credentials: true
-  }
-});
-
-// Make io available to routes
-app.set('io', io);
+let io = null;
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', message: 'Trading Platform API is running' });
+  res.json({ status: 'ok', mode: 'governed-paper-only' });
+});
+
+app.get('/health/ready', async (req, res) => {
+  try {
+    await pool.query('SELECT 1 FROM gt_tenants LIMIT 1');
+    res.json({ status: 'ready', database: true, mode: 'governed-paper-only' });
+  } catch {
+    res.status(503).json({ status: 'not-ready', database: false });
+  }
 });
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/signals', signalRoutes);
-app.use('/api/portfolio', portfolioRoutes);
-app.use('/api/strategies', strategyRoutes);
-app.use('/api/prices', priceRoutes);
-app.use('/api/ai', aiRoutes);
-app.use('/api/enhancements', enhancementsRoutes);
-app.use('/api/trades', tradeRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/v2/trading', governedTradingRoutes);
 
-// WebSocket connection handling
-io.on('connection', (socket) => {
-  console.log(`Client connected: ${socket.id}`);
+const legacyPaths = ['/api/signals', '/api/portfolio', '/api/strategies', '/api/prices', '/api/ai', '/api/enhancements', '/api/trades'];
+if (!legacyDemoEnabled) {
+  for (const route of legacyPaths) app.use(route, (req, res) => res.status(410).json({ error: 'legacy demo surface disabled; use /api/v2/trading' }));
+}
 
-  socket.on('subscribe', (data) => {
-    console.log(`Client ${socket.id} subscribed to:`, data);
-    if (data.channel) {
-      socket.join(data.channel);
-    }
+async function enableLegacyDemo() {
+  if (!legacyDemoEnabled) return;
+  const { Server } = await import('socket.io');
+  io = new Server(httpServer, {
+    cors: { origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true },
   });
-
-  socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
+  app.set('io', io);
+  io.on('connection', (socket) => {
+    socket.on('subscribe', (data) => { if (data.channel) socket.join(data.channel); });
   });
-});
+  const [
+    { default: signalRoutes }, { default: portfolioRoutes },
+    { default: strategyRoutes }, { default: priceRoutes },
+    { default: aiRoutes }, { default: enhancementsRoutes },
+    { default: tradeRoutes }, priceService, signalService, schedulerService,
+  ] = await Promise.all([
+    import('./routes/signals.js'), import('./routes/portfolios.js'),
+    import('./routes/strategies.js'), import('./routes/prices.js'),
+    import('./routes/ai.js'), import('./routes/enhancements.js'),
+    import('./routes/trades.js'), import('./services/priceService.js'),
+    import('./services/signalService.js'), import('./services/schedulerService.js'),
+  ]);
+  for (const [route, handler] of [
+    ['/api/signals', signalRoutes], ['/api/portfolio', portfolioRoutes],
+    ['/api/strategies', strategyRoutes], ['/api/prices', priceRoutes],
+    ['/api/ai', aiRoutes], ['/api/enhancements', enhancementsRoutes],
+    ['/api/trades', tradeRoutes],
+  ]) app.use(route, handler);
+  priceService.startPriceUpdates(io);
+  signalService.startSignalGeneration(io);
+  schedulerService.startScheduledTasks(io);
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  const statusCode = Number.isInteger(err.status) ? err.status : 500;
+  if (statusCode >= 500) console.error('Error:', err.stack);
+  res.status(statusCode).json({
+    error: statusCode < 500 ? err.message : 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
   });
 });
 
@@ -109,18 +119,12 @@ async function startServer() {
     await pool.query('SELECT NOW()');
     console.log('Database connection established');
 
-    // Start real-time services
-    startPriceUpdates(io);
-    startSignalGeneration(io);
-
-    // Start scheduled tasks (cron jobs)
-    startScheduledTasks(io);
+    await enableLegacyDemo();
 
     httpServer.listen(PORT, () => {
       console.log(`\nBackend server running on http://localhost:${PORT}`);
-      console.log(`WebSocket server running on ws://localhost:${PORT}`);
       console.log(`API Health: http://localhost:${PORT}/health`);
-      console.log(`Scheduled tasks started\n`);
+      console.log(`Mode: ${legacyDemoEnabled ? 'development demo' : 'governed paper only'}\n`);
     });
   } catch (error) {
     console.error('Failed to start server:', error.message);
@@ -128,6 +132,8 @@ async function startServer() {
   }
 }
 
-startServer();
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+  startServer();
+}
 
-export { io };
+export { app, httpServer, io, startServer };

@@ -33,6 +33,9 @@ import Privacy from './pages/Legal/Privacy';
 import Terms from './pages/Legal/Terms';
 import Cookies from './pages/Legal/Cookies';
 import NotFound from './pages/NotFound';
+import GovernedTradingDashboard from './pages/GovernedTrading/Dashboard';
+
+const demoEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_LEGACY_DEMO_SURFACES === 'true';
 
 function App() {
   return (
@@ -47,11 +50,12 @@ function App() {
                   <Navbar />
                   <Box component="main" sx={{ flexGrow: 1 }}>
                     <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/algotrader" element={<AlgoTraderDashboard />} />
-                      <Route path="/signalstream" element={<SignalStreamDashboard />} />
-                      <Route path="/pricing" element={<Pricing />} />
-                      <Route path="/ai-analytics" element={<AIAnalyticsDashboard />} />
+                      <Route path="/" element={demoEnabled ? <Home /> : <GovernedTradingDashboard />} />
+                      <Route path="/paper-trading" element={<GovernedTradingDashboard />} />
+                      {demoEnabled && <Route path="/algotrader" element={<AlgoTraderDashboard />} />}
+                      {demoEnabled && <Route path="/signalstream" element={<SignalStreamDashboard />} />}
+                      {demoEnabled && <Route path="/pricing" element={<Pricing />} />}
+                      {demoEnabled && <Route path="/ai-analytics" element={<AIAnalyticsDashboard />} />}
 
                       {/* Auth */}
                       <Route path="/login" element={<Login />} />
@@ -62,10 +66,10 @@ function App() {
                       <Route path="/profile" element={<ProfileSettings />} />
 
                       {/* Management */}
-                      <Route path="/manage/signals" element={<SignalsManagement />} />
-                      <Route path="/manage/strategies" element={<StrategiesManagement />} />
-                      <Route path="/manage/trades" element={<TradesManagement />} />
-                      <Route path="/manage/users" element={<UsersManagement />} />
+                      {demoEnabled && <Route path="/manage/signals" element={<SignalsManagement />} />}
+                      {demoEnabled && <Route path="/manage/strategies" element={<StrategiesManagement />} />}
+                      {demoEnabled && <Route path="/manage/trades" element={<TradesManagement />} />}
+                      {demoEnabled && <Route path="/manage/users" element={<UsersManagement />} />}
 
                       {/* Company Pages */}
                       <Route path="/about" element={<About />} />

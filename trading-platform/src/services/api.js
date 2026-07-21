@@ -2,8 +2,8 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 
 // API Configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : '');
+const WS_URL = import.meta.env.VITE_WS_URL ?? (import.meta.env.DEV ? 'http://localhost:3001' : window.location.origin);
 
 // Create axios instance
 const api = axios.create({
@@ -20,6 +20,8 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const tradingTenant = localStorage.getItem('tradingTenant');
+  if (tradingTenant) config.headers['x-tenant-id'] = tradingTenant;
   return config;
 });
 
@@ -126,6 +128,42 @@ export const getActiveSignals = async () => {
 // Trades
 export const getTrades = async () => {
   const response = await api.get('/api/trades');
+  return response.data;
+};
+
+export const bootstrapTradingTenant = async (tenantKey, name) => {
+  const response = await api.post('/api/v2/trading/bootstrap', { tenantKey, name });
+  localStorage.setItem('tradingTenant', tenantKey);
+  return response.data;
+};
+
+export const getTradingDashboard = async () => {
+  const response = await api.get('/api/v2/trading/dashboard');
+  return response.data;
+};
+
+export const createPaperAccount = async (payload) => {
+  const response = await api.post('/api/v2/trading/accounts', payload);
+  return response.data;
+};
+
+export const submitPaperOrder = async (payload) => {
+  const response = await api.post('/api/v2/trading/orders', payload);
+  return response.data;
+};
+
+export const simulatePaperOrder = async (orderId, payload) => {
+  const response = await api.post(`/api/v2/trading/orders/${orderId}/simulate`, payload);
+  return response.data;
+};
+
+export const setPaperKillSwitch = async (accountId, payload) => {
+  const response = await api.post(`/api/v2/trading/accounts/${accountId}/kill-switch`, payload);
+  return response.data;
+};
+
+export const getTradingAuditExport = async () => {
+  const response = await api.get('/api/v2/trading/audit-export');
   return response.data;
 };
 

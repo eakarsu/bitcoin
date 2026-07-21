@@ -1,0 +1,14 @@
+FROM node:24.4.1-bookworm-slim AS dependencies
+WORKDIR /app/backend
+COPY backend/package.json backend/package-lock.json ./
+RUN npm ci --omit=dev
+
+FROM node:24.4.1-bookworm-slim
+ENV NODE_ENV=production
+WORKDIR /app/backend
+COPY --from=dependencies /app/backend/node_modules ./node_modules
+COPY backend/package.json ./
+COPY backend/src ./src
+USER node
+EXPOSE 3001
+CMD ["npm", "start"]

@@ -1,0 +1,55 @@
+services:
+  database:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_DB: trading_platform
+      POSTGRES_USER: trading
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - trading-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trading -d trading_platform"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    image: node:24.4.1-bookworm-slim
+    working_dir: /app/backend
+    volumes:
+      - ./backend:/app/backend:ro
+    environment:
+      DATABASE_URL: postgresql://trading:${POSTGRES_PASSWORD}@database:5432/trading_platform
+    command: ["sh", "-c", "npm ci --omit=dev && npm run migrate"]
+    depends_on:
+      database:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://trading:${POSTGRES_PASSWORD}@database:5432/trading_platform
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      CORS_ORIGIN: ${PUBLIC_ORIGIN:?set PUBLIC_ORIGIN}
+      MARKET_DATA_WEBHOOK_SECRETS_JSON: ${MARKET_DATA_WEBHOOK_SECRETS_JSON:?set MARKET_DATA_WEBHOOK_SECRETS_JSON}
+      ENABLE_LEGACY_DEMO_SURFACES: "false"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs: [/tmp]
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    ports: ["8080:8080"]
+    depends_on: [api]
+    read_only: true
+    tmpfs: [/var/cache/nginx, /var/run]
+
+volumes:
+  trading-db:
