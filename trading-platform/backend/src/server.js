@@ -9,6 +9,7 @@ import pool from './config/database.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import governedTradingRoutes from './routes/governedTrading.js';
+import runtimeAiRoutes from './routes/runtimeAi.js';
 import { sanitizeInput } from './middleware/sanitize.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -61,6 +62,7 @@ app.get('/health/ready', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/v2/trading', governedTradingRoutes);
+app.use('/api/runtime-ai', runtimeAiRoutes);
 
 const legacyPaths = ['/api/signals', '/api/portfolio', '/api/strategies', '/api/prices', '/api/ai', '/api/enhancements', '/api/trades'];
 if (!legacyDemoEnabled) {

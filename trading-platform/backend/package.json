@@ -9,6 +9,7 @@
     "dev": "nodemon src/server.js",
     "migrate": "node migrations/run.js",
     "seed:demo": "node seeds/run.js",
+    "create-admin": "node scripts/create-admin.js",
     "test": "node --test test/*.test.js",
     "security": "node scripts/audit-repository.js",
     "check": "node --check src/server.js && node --check src/routes/governedTrading.js && node --check src/governance/riskEngine.js && npm run security && npm test"
