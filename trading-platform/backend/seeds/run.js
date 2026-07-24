@@ -1,12 +1,18 @@
 import pool from '../src/config/database.js';
 import bcrypt from 'bcryptjs';
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 async function seed() {
   try {
     console.log('🌱 Seeding database...');
 
     // Create demo user
-    const hashedPassword = await bcrypt.hash('demo123', 10);
+    const hashedPassword = await bcrypt.hash(requireDemoPassword(), 10);
 
     const userResult = await pool.query(
       `INSERT INTO users (email, password_hash, name, subscription_tier)
@@ -123,7 +129,7 @@ async function seed() {
     console.log('\n✓ Database seeding completed successfully!\n');
     console.log('📧 Demo Account:');
     console.log('   Email: demo@trading.com');
-    console.log('   Password: demo123\n');
+    console.log('Demo login users provisioned from the local environment.');
 
     process.exit(0);
   } catch (error) {

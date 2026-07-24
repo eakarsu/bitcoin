@@ -2,6 +2,12 @@ import pool from '../src/config/database.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
+function requireDemoPassword() {
+  const password = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD || process.env.DEMO_SEED_PASSWORD || '';
+  if (password.length < 12 || password.length > 1024) throw new Error('DEMO_PASSWORD must contain 12-1024 characters');
+  return password;
+}
+
 async function seed() {
   try {
     console.log('Seeding database...\n');
@@ -28,8 +34,8 @@ async function seed() {
     // ============================================================
     // 2. USERS - 25 users with different tiers and roles
     // ============================================================
-    const hashedPassword = await bcrypt.hash('demo123', 10);
-    const strongPassword = await bcrypt.hash('SecurePass1!', 10);
+    const hashedPassword = await bcrypt.hash(requireDemoPassword(), 10);
+    const strongPassword = await bcrypt.hash(requireDemoPassword(), 10);
 
     const users = [
       ['demo@trading.com', hashedPassword, 'Demo User', 'professional', true, 'admin', '+1-555-0100', 'Full stack trader & admin', 'America/New_York'],
@@ -370,7 +376,7 @@ async function seed() {
     console.log('\n--- Database seeding completed successfully! ---\n');
     console.log('Demo Account:');
     console.log('  Email: demo@trading.com');
-    console.log('  Password: demo123');
+    console.log('Demo login users provisioned from the local environment.');
     console.log('  Role: admin\n');
     console.log('Admin Account:');
     console.log('  Email: admin@trading.com');
