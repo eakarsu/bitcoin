@@ -62,6 +62,13 @@ export function disconnectSocket() {
 
 // API Functions
 
+// Legacy list endpoints return paginated objects; their dashboard callers need rows.
+export const listRows = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  throw new TypeError('The list API returned no row array.');
+};
+
 // Auth
 export const login = async (email, password) => {
   const response = await api.post('/api/auth/login', { email, password });
@@ -84,7 +91,7 @@ export const logout = () => {
 // Prices
 export const getCurrentPrices = async () => {
   const response = await api.get('/api/prices');
-  return response.data;
+  return listRows(response.data);
 };
 
 // Portfolio
@@ -95,13 +102,13 @@ export const getPortfolio = async () => {
 
 export const getPositions = async () => {
   const response = await api.get('/api/portfolio/positions');
-  return response.data;
+  return listRows(response.data);
 };
 
 // Strategies
 export const getStrategies = async () => {
   const response = await api.get('/api/strategies');
-  return response.data;
+  return listRows(response.data);
 };
 
 export const createStrategy = async (strategy) => {
@@ -117,18 +124,18 @@ export const updateStrategy = async (id, updates) => {
 // Signals
 export const getSignals = async () => {
   const response = await api.get('/api/signals');
-  return response.data;
+  return listRows(response.data);
 };
 
 export const getActiveSignals = async () => {
   const response = await api.get('/api/signals/active');
-  return response.data;
+  return listRows(response.data);
 };
 
 // Trades
 export const getTrades = async () => {
   const response = await api.get('/api/trades');
-  return response.data;
+  return listRows(response.data);
 };
 
 export const bootstrapTradingTenant = async (tenantKey, name) => {
@@ -139,6 +146,9 @@ export const bootstrapTradingTenant = async (tenantKey, name) => {
 
 export const getTradingDashboard = async () => {
   const response = await api.get('/api/v2/trading/dashboard');
+  if (!Array.isArray(response.data?.accounts) || !Array.isArray(response.data?.orders)) {
+    throw new TypeError('The trading dashboard response is missing account or order rows.');
+  }
   return response.data;
 };
 

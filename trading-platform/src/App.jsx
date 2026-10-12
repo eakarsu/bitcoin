@@ -1,3 +1,4 @@
+import NativeAIReadiness from './pages/NativeAIReadiness';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import { CssBaseline, Box } from '@mui/material';
@@ -51,7 +52,7 @@ function App() {
                   <Box component="main" sx={{ flexGrow: 1 }}>
                     <Routes>
                       <Route path="/" element={demoEnabled ? <Home /> : <GovernedTradingDashboard />} />
-                      <Route path="/paper-trading" element={<GovernedTradingDashboard />} />
+                      <Route path="/paper-trading" element={<GovernedTradingDashboard />} /><Route path="/ai-workspace" element={<NativeAIReadiness/>}/>
                       {demoEnabled && <Route path="/algotrader" element={<AlgoTraderDashboard />} />}
                       {demoEnabled && <Route path="/signalstream" element={<SignalStreamDashboard />} />}
                       {demoEnabled && <Route path="/pricing" element={<Pricing />} />}

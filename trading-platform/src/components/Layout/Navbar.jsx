@@ -66,7 +66,7 @@ const Navbar = () => {
   return (
     <AppBar position="sticky" elevation={1} sx={{ backgroundColor: 'background.paper', color: 'text.primary' }}>
       <Container maxWidth="xl">
-        <Toolbar disableGutters>
+        <Toolbar disableGutters><Button onClick={() => navigate('/ai-workspace')}>AI workspace</Button>
           {/* Logo - Desktop */}
           <ShowChart sx={{ display: { xs: 'none', md: 'flex' }, mr: 1, color: 'primary.main' }} />
           <Typography

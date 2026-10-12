@@ -95,7 +95,7 @@ export default function GovernedTradingDashboard() {
           <Grid size={{ xs: 12, md: 6 }}><Card><CardContent><Stack spacing={2}>
             <Typography variant="h6">Submit paper order</Typography>
             <TextField select SelectProps={{ native: true }} label="Account" value={order.accountId} onChange={(event) => setOrder({ ...order, accountId: event.target.value })}>
-              <option value="">Select account</option>{dashboard?.accounts.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              <option value="">Select account</option>{(Array.isArray(dashboard?.accounts) ? dashboard.accounts : []).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </TextField>
             <TextField label="Symbol" value={order.symbol} onChange={(event) => setOrder({ ...order, symbol: event.target.value.toUpperCase() })} />
             <TextField select SelectProps={{ native: true }} label="Side" value={order.side} onChange={(event) => setOrder({ ...order, side: event.target.value })}><option>BUY</option><option>SELL</option></TextField>
@@ -105,14 +105,14 @@ export default function GovernedTradingDashboard() {
         </Grid>
 
         <Typography variant="h5">Accounts and controls</Typography>
-        <Grid container spacing={2}>{dashboard?.accounts.map((item) => <Grid key={item.id} size={{ xs: 12, md: 4 }}><Card><CardContent><Stack spacing={1}>
+        <Grid container spacing={2}>{(Array.isArray(dashboard?.accounts) ? dashboard.accounts : []).map((item) => <Grid key={item.id} size={{ xs: 12, md: 4 }}><Card><CardContent><Stack spacing={1}>
           <Typography fontWeight={700}>{item.name}</Typography><Typography variant="body2">{item.account_key} · {item.custody_mode}</Typography>
           <Chip size="small" color={item.trading_enabled ? 'success' : 'error'} label={item.trading_enabled ? 'Trading enabled' : `Killed: ${item.kill_reason}`} />
           <Button color={item.trading_enabled ? 'error' : 'success'} onClick={() => act(() => setPaperKillSwitch(item.id, { enabled: !item.trading_enabled, reason: item.trading_enabled ? 'Operator risk stop' : 'Reviewed and released' }))}>{item.trading_enabled ? 'Activate kill switch' : 'Release kill switch'}</Button>
         </Stack></CardContent></Card></Grid>)}</Grid>
 
         <Typography variant="h5">Orders</Typography>
-        <Stack spacing={1}>{dashboard?.orders.map((item) => <Card key={item.id}><CardContent><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+        <Stack spacing={1}>{(Array.isArray(dashboard?.orders) ? dashboard.orders : []).map((item) => <Card key={item.id}><CardContent><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
           <Typography fontWeight={700}>#{item.id} {item.side} {item.symbol}</Typography><Chip size="small" label={item.status} />
           <Typography variant="body2">{item.quantity_units} atomic units</Typography>
           {['ACCEPTED', 'PARTIALLY_FILLED'].includes(item.status) && <><Button onClick={() => act(() => simulatePaperOrder(item.id, { attemptKey: crypto.randomUUID(), scenario: 'PARTIAL' }))}>Partial fill</Button><Button onClick={() => act(() => simulatePaperOrder(item.id, { attemptKey: crypto.randomUUID(), scenario: 'FULL' }))}>Full fill</Button></>}

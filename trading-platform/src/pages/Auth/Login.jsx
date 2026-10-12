@@ -67,7 +67,7 @@ const Login = () => {
     try {
       await login(formData.email, formData.password);
       toast.success('Welcome back! Login successful.');
-      navigate('/algotrader');
+      navigate('/paper-trading');
     } catch (err) {
       const message =
         err.response?.data?.error ||
@@ -188,13 +188,18 @@ const Login = () => {
 
               <button
                 type="button"
-                onClick={() => { setFormData((current) => ({ ...current, email: import.meta.env.VITE_DEMO_EMAIL || '', password: import.meta.env.VITE_DEMO_PASSWORD || '' })); }}
+                onClick={() => { setFormData({ email: import.meta.env.VITE_DEMO_EMAIL, password: import.meta.env.VITE_DEMO_PASSWORD }); setErrors({}); }}
                 disabled={!import.meta.env.VITE_DEMO_EMAIL || !import.meta.env.VITE_DEMO_PASSWORD}
-                aria-label="Auto Fill Demo Credentials"
+                aria-label="Fill demo credentials"
                 style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
               >
-                Auto Fill Demo Credentials
+                Fill demo credentials
               </button>
+              {(!import.meta.env.VITE_DEMO_EMAIL || !import.meta.env.VITE_DEMO_PASSWORD) && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Demo credentials are not configured for this app session.
+                </Typography>
+              )}
               <Button
                 type="submit"
                 fullWidth

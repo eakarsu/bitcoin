@@ -6,7 +6,9 @@ const router = express.Router();
 router.post('/analysis', authenticate, async (req, res, next) => {
   try {
     const prompt = String(req.body?.prompt || '').trim();
+    const context = String(req.body?.context || '').trim();
     if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
+    if (prompt.length > 4000 || context.length > 4000) return res.status(400).json({ error: 'Input is too long' });
     const apiKey = process.env.OPENROUTER_API_KEY;
     const model = process.env.OPENROUTER_MODEL;
     const baseUrl = process.env.OPENROUTER_BASE_URL;
@@ -16,7 +18,7 @@ router.post('/analysis', authenticate, async (req, res, next) => {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ model, temperature: 0.2, messages: [
         { role: 'system', content: 'You are a cryptocurrency operational-risk reviewer. Give concise risks, evidence gaps, next actions, uncertainty, and required human review. Do not provide personalized financial advice.' },
-        { role: 'user', content: prompt },
+        { role: 'user', content: context ? `${prompt}\n\nKnown constraints and source context:\n${context}` : prompt },
       ] }),
     });
     if (!response.ok) throw new Error(`OpenRouter returned ${response.status}`);
@@ -24,8 +26,16 @@ router.post('/analysis', authenticate, async (req, res, next) => {
     const output = String(payload?.choices?.[0]?.message?.content || '').trim();
     if (!output) throw new Error('OpenRouter returned an empty response');
     const saved = await pool.query(`INSERT INTO runtime_ai_results(user_id,feature,input,output,model)
-      VALUES($1,'runtime-analysis',$2,$3,$4) RETURNING id`, [req.user.id, { prompt }, output, model]);
+      VALUES($1,'runtime-analysis',$2,$3,$4) RETURNING id`, [req.user.id, { prompt, context }, output, model]);
     res.json({ id: saved.rows[0].id, response: output, model, provider: 'openrouter' });
+  } catch (error) { next(error); }
+});
+router.get('/history', authenticate, async (req, res, next) => {
+  try {
+    const saved = await pool.query(`SELECT id, output, model, created_at
+      FROM runtime_ai_results WHERE user_id = $1 AND feature = 'runtime-analysis'
+      ORDER BY created_at DESC, id DESC LIMIT 20`, [req.user.id]);
+    res.json({ results: saved.rows });
   } catch (error) { next(error); }
 });
 export default router;

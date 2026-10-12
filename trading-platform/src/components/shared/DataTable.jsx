@@ -23,7 +23,6 @@ const DataTable = ({
   onExportCsv,
   onExportPdf,
   filters = [],
-  resource,
   refreshTrigger = 0,
 }) => {
   const [data, setData] = useState([]);
@@ -31,6 +30,7 @@ const DataTable = ({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(15);
   const [total, setTotal] = useState(0);
+  const [loadError, setLoadError] = useState('');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
@@ -55,16 +55,16 @@ const DataTable = ({
 
       const result = await fetchData(params);
 
-      if (result.data) {
-        setData(result.data);
-        setTotal(result.pagination?.total || result.data.length);
-      } else if (Array.isArray(result)) {
-        setData(result);
-        setTotal(result.length);
-      }
+      const rows = Array.isArray(result) ? result : result?.data;
+      if (!Array.isArray(rows)) throw new TypeError('The list API returned no row array.');
+      setData(rows);
+      setTotal(Number.isFinite(Number(result?.pagination?.total)) ? Number(result.pagination.total) : rows.length);
+      setLoadError('');
     } catch (error) {
       console.error('Failed to load data:', error);
       setData([]);
+      setTotal(0);
+      setLoadError(error.message || 'Records could not be loaded.');
     }
     setLoading(false);
   }, [fetchData, page, rowsPerPage, search, sortBy, sortOrder, filterValues]);
@@ -293,7 +293,7 @@ const DataTable = ({
               ) : data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length + 2} align="center" sx={{ py: 4 }}>
-                    <Typography color="text.secondary">No data found</Typography>
+                    <Typography color={loadError ? 'error' : 'text.secondary'}>{loadError || 'No data found'}</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
