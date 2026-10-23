@@ -36,6 +36,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [demoError, setDemoError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -186,20 +187,15 @@ const Login = () => {
                 </Link>
               </Box>
 
-              <button
-                type="button"
-                onClick={() => { setFormData({ email: import.meta.env.VITE_DEMO_EMAIL, password: import.meta.env.VITE_DEMO_PASSWORD }); setErrors({}); }}
-                disabled={!import.meta.env.VITE_DEMO_EMAIL || !import.meta.env.VITE_DEMO_PASSWORD}
-                aria-label="Fill demo credentials"
-                style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
-              >
-                Fill demo credentials
-              </button>
-              {(!import.meta.env.VITE_DEMO_EMAIL || !import.meta.env.VITE_DEMO_PASSWORD) && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Demo credentials are not configured for this app session.
-                </Typography>
-              )}
+              {demoError && <p style={{ color: 'red', fontSize: '14px' }}>{demoError}</p>}
+                <button
+                  type="button"
+                  onClick={async () => { if (import.meta.env.VITE_DEMO_EMAIL && import.meta.env.VITE_DEMO_PASSWORD) { setFormData({ email: import.meta.env.VITE_DEMO_EMAIL, password: import.meta.env.VITE_DEMO_PASSWORD }); setErrors({}); return; } try { const res = await fetch('/api/auth/demo-credentials', { cache: 'no-store' }); if (res.ok) { const data = await res.json(); if (data?.email && data?.password) { setFormData({ email: data.email, password: data.password }); setErrors({}); return; } } } catch {} setDemoError("Demo credentials are not configured for this environment."); }}
+                  aria-label="Fill demo credentials"
+                  style={{ width: '100%', marginBottom: '12px', padding: '10px 14px', borderRadius: '8px', border: '1px solid currentColor', background: 'transparent', cursor: 'pointer' }}
+                >
+                  Fill demo credentials
+                </button>
               <Button
                 type="submit"
                 fullWidth
